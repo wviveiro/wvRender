@@ -1,0 +1,23 @@
+{
+  "name": "wvrender",
+  "version": "0.0.1",
+  "description": "wvRender is used to render HTML DOM from JSON objects. To read more, please go to http://github.com/wviveiro/wvRender",
+  "main": "wvrender.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wviveiro/wvRender.git"
+  },
+  "author": "Wellington Viveiro https://github.com/wviveiro",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wviveiro/wvRender/issues"
+  },
+  "homepage": "https://github.com/wviveiro/wvRender#readme",
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-contrib-uglify": "^2.0.0"
+  }
+}

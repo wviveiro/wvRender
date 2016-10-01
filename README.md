@@ -132,6 +132,26 @@ wvRender( function( wv ){
 } );
 ```
 
+### reRenderUnique
+Allows the user to re call the same render when an action happens. The difference between this and the function <strong>reRender</strong> is that this one renders only on specific interation. the other render all the object.
+
+```
+wvRender( function( wv ){
+	wv.render( myObj, $( 'div[wv-name="user"]' ), function( controller ){
+		controller.jq.find( 'input[name="age"]' ).unbind( 'click' ).bind( 'click', function(){
+			if( controller.index == 0 ){
+				controller.json.name = 'Robert';
+				controller.reRenderUnique();
+			}
+		} );
+	} );
+} );
+```
+
+
+## Update 0.0.2
+
+Add the function to render unique interation.
 
 ## Update 0.0.1
 

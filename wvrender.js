@@ -51,70 +51,87 @@ var wvRender = function( arg ){
 			var name = container.attr( 'wv-name' );
 			jsObj.forEach( function( e, i, a ){
 				
-				/*
-				 * [ob description]
+				/**
+				 * Self2 is used case user wants to render unique
 				 */
-				var ob = container.clone().removeAttr( 'wv-name' );			
-				self.children.push( ob );
+				var self2 = {};
 
-				if( 'undefined' != typeof name ){
-					/*
-					 * Case find inputs with wv-parent, bind it automatically and 
-					 * add the input name as property of the json object
-					 */
-					ob.find( 'input[wv-parent="' + name + '"]' ).each( function( e2, i2, a2 ){
-						var inputName = $( this ).attr( 'name' );
-						if( 'undefined' == typeof inputName ) return false;
+				/*
+				 * ob is the container that will be cloned and addes to the html
+				 */
+				
+				self2.renderInternal = function(){
+					if( 'undefined' != typeof self2.ob ){
+						self2.ob.remove();
+					}
 
+					
+					self2.ob = container.clone().removeAttr( 'wv-name' );			
+					self.children.push( self2.ob );
+
+					if( 'undefined' != typeof name ){
 						/*
-						 * In order to avoid error, force property to be string
+						 * Case find inputs with wv-parent, bind it automatically and 
+						 * add the input name as property of the json object
 						 */
-						if( ! e.hasOwnProperty( inputName ) || 'string' != typeof e[ inputName ] ){
-							e[ inputName ] = $( this ).val();
-						}
-						$( this ).val( e[ inputName ] );
+						self2.ob.find( 'input[wv-parent="' + name + '"]' ).each( function( e2, i2, a2 ){
+							var inputName = $( this ).attr( 'name' );
+							if( 'undefined' == typeof inputName ) return false;
 
-						/*
-						 * Key the value of the input and the json property the same.
-						 */
-						internBind( $( this ), 'wvinternbind', function(){
-							e[ inputName ] = $( this ).val();
+							/*
+							 * In order to avoid error, force property to be string
+							 */
+							if( ! e.hasOwnProperty( inputName ) || 'string' != typeof e[ inputName ] ){
+								e[ inputName ] = $( this ).val();
+							}
+							$( this ).val( e[ inputName ] );
+
+							/*
+							 * Key the value of the input and the json property the same.
+							 */
+							internBind( $( this ), 'wvinternbind', function(){
+								e[ inputName ] = $( this ).val();
+							} );
 						} );
-					} );
 
-					/**
-					 * bind all inputs that uses wv-parent inside the object
-					 * @author Wellington Viveiro <https://github.com/wviveiro>
-					 * @param  {Function} callback function to be called when the event is triggered
-					 * @return {null} 
+						/**
+						 * bind all inputs that uses wv-parent inside the object
+						 * @author Wellington Viveiro <https://github.com/wviveiro>
+						 * @param  {Function} callback function to be called when the event is triggered
+						 * @return {null} 
+						 */
+						var bindAll = function( callback ){
+							internBind( self2.ob.find( 'input[wv-parent="' + name + '"]' ), 'wvBindAll', callback );
+						}
+
+						var bind = function( inputName, callback ){
+							internBind( self2.ob.find( 'input[wv-parent="' + name + '"][name="' + inputName + '"]' ), 'wvBindAll', callback );
+						}
+					}
+
+
+
+					/*
+					 * object that will be sent in the callback
 					 */
-					var bindAll = function( callback ){
-						internBind( ob.find( 'input[wv-parent="' + name + '"]' ), 'wvBindAll', callback );
-					}
+					var controller = {
+						json 			: e, 
+						jq 				: self2.ob,
+						index 			: i,
+						reRender 		: self.executeRender,
+						reRenderUnique 	: self2.renderInternal,
+						bindAll 		: bindAll,
+						bind 			: bind
+					};
 
-					var bind = function( inputName, callback ){
-						internBind( ob.find( 'input[wv-parent="' + name + '"][name="' + inputName + '"]' ), 'wvBindAll', callback );
-					}
+
+					callback( controller );
+
+					container.before( self2.ob );
 				}
 
+				self2.renderInternal();
 
-
-				/*
-				 * object that will be sent in the callback
-				 */
-				var controller = {
-					json 		: e, 
-					jq 			: ob,
-					index 		: i,
-					reRender 	: self.executeRender,
-					bindAll 	: bindAll,
-					bind 		: bind
-				};
-
-
-				callback( controller );
-
-				container.before( ob );
 			} );
 		}
 
