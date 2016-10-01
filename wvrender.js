@@ -70,11 +70,15 @@ var wvRender = function( arg ){
 					self.children.push( self2.ob );
 
 					if( 'undefined' != typeof name ){
+						var input = {
+							general : 'input[wv-parent="' + name + '"],select[wv-parent="' + name + '"]',
+						}
+
 						/*
 						 * Case find inputs with wv-parent, bind it automatically and 
 						 * add the input name as property of the json object
 						 */
-						self2.ob.find( 'input[wv-parent="' + name + '"]' ).each( function( e2, i2, a2 ){
+						self2.ob.find( input.general ).each( function( e2, i2, a2 ){
 							var inputName = $( this ).attr( 'name' );
 							if( 'undefined' == typeof inputName ) return false;
 
@@ -82,16 +86,43 @@ var wvRender = function( arg ){
 							 * In order to avoid error, force property to be string
 							 */
 							if( ! e.hasOwnProperty( inputName ) || 'string' != typeof e[ inputName ] ){
-								e[ inputName ] = $( this ).val();
+								if( $( this ).attr( 'type' ) == 'text' || $( this ).is( 'select' ) ){
+									e[ inputName ] = $( this ).val();
+								}else if( $( this ).attr( 'type' ) == 'checkbox' || $( this ).attr( 'type' ) == 'radio' ){
+									if( $( this ).prop( 'checked' ) ){
+										e[ inputName ] = true;
+									}else{
+										e[ inputName ] = false;
+									}
+								}
 							}
-							$( this ).val( e[ inputName ] );
+
+							/*
+							 * Verify type of input to see the correct action
+							 */
+							if( $( this ).attr( 'type' ) == 'text' || $( this ).is( 'select' ) ){
+								$( this ).val( e[ inputName ] );
+							
+								internFunction = function(){
+									e[ inputName ] = $( this ).val();
+								}
+							}else if( $( this ).attr( 'type' ) == 'checkbox' || $( this ).attr( 'type' ) == 'radio' ){
+								if( e[ inputName ] === 'false' || e[ inputName ] === '0' || e[ inputName ] === false || e[ inputName ] === 0 ){
+									$( this ).attr( 'checked', false ).prop( 'checked', false );
+								}else{
+									$( this ).attr( 'checked', true ).prop( 'checked', true );
+								}
+
+								internFunction = function(){
+									e[ inputName ] = $( this ).prop( 'checked' );
+								}
+							}
 
 							/*
 							 * Key the value of the input and the json property the same.
 							 */
-							internBind( $( this ), 'wvinternbind', function(){
-								e[ inputName ] = $( this ).val();
-							} );
+							internBind( $( this ), 'wvinternbind', internFunction );
+							
 						} );
 
 						/**
@@ -101,11 +132,11 @@ var wvRender = function( arg ){
 						 * @return {null} 
 						 */
 						var bindAll = function( callback ){
-							internBind( self2.ob.find( 'input[wv-parent="' + name + '"]' ), 'wvBindAll', callback );
+							internBind( self2.ob.find( input.general ), 'wvBindAll', callback );
 						}
 
 						var bind = function( inputName, callback ){
-							internBind( self2.ob.find( 'input[wv-parent="' + name + '"][name="' + inputName + '"]' ), 'wvBindAll', callback );
+							internBind( self2.ob.find( 'input[name="' + inputName + '"], select[name="' + inputName + '"]' ), 'wvBindAll', callback );
 						}
 					}
 
@@ -149,7 +180,20 @@ var wvRender = function( arg ){
 	 * @return {null}
 	 */
 	var internBind = function( jqObj, bindName, callback ){
-		jqObj.unbind( 'input.' + bindName ).bind( 'input.' + bindName, callback );
+		var trigger = 'input.';
+
+		switch( jqObj.attr( 'type' ) ){
+			case 'checkbox':
+			case 'radio':
+				trigger = 'change.'
+				break;
+			default: 
+				if( jqObj.is( 'select' ) ){
+					trigger = 'change.';
+				}
+		}
+
+		jqObj.unbind( trigger + bindName ).bind( trigger + bindName, callback );
 	}
 
 
