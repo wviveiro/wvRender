@@ -17,6 +17,26 @@ var wvRender = function( arg ){
 
 	var $ = jQuery;
 
+	/*
+	Function to open loading when saving data.
+	 */
+	var loading = true;
+
+	/*
+	content of the loading, it user wants to add something
+	 */
+	var contentLoading = '';
+
+	/*
+	verify if the save function saved storage or not
+	 */
+	var storage = false;
+
+	/*
+	content of the storage saved
+	 */
+	var contentStorage = {};
+
 
 	/**
 	 * Render html based of json
@@ -35,6 +55,12 @@ var wvRender = function( arg ){
 		self.children = [];
 
 		callback = callback || function( controller ){};
+
+		/*
+		input types
+		 */
+		var textTypes = [ 'text', 'number', 'password' ];
+		var checkTypes = [ 'checkbox', 'radio' ];
 
 		/*
 		 * Function calls another function inside, to be able to re render when necessary
@@ -65,6 +91,11 @@ var wvRender = function( arg ){
 						self2.ob.remove();
 					}
 
+					/*
+					 * If item is removed, do not render
+					 */
+					if( e.removed ) return false;
+
 					
 					self2.ob = container.clone().removeAttr( 'wv-name' );			
 					self.children.push( self2.ob );
@@ -74,21 +105,28 @@ var wvRender = function( arg ){
 							general : 'input[wv-parent="' + name + '"],select[wv-parent="' + name + '"]',
 						}
 
+						self2.ob.find( '*[wv-inner]' ).each( function( i2 ){
+							var innerName = $( this ).attr( 'wv-inner' );
+							if( e.hasOwnProperty( innerName ) ){
+								$( this ).html( e[ innerName ] );
+							}
+						} );
+
 						/*
 						 * Case find inputs with wv-parent, bind it automatically and 
 						 * add the input name as property of the json object
 						 */
-						self2.ob.find( input.general ).each( function( e2, i2, a2 ){
+						self2.ob.find( input.general ).each( function( i2 ){
 							var inputName = $( this ).attr( 'name' );
 							if( 'undefined' == typeof inputName ) return false;
 
 							/*
 							 * In order to avoid error, force property to be string
 							 */
-							if( ! e.hasOwnProperty( inputName ) || 'string' != typeof e[ inputName ] ){
-								if( $( this ).attr( 'type' ) == 'text' || $( this ).is( 'select' ) ){
+							if( ! e.hasOwnProperty( inputName ) || ( 'string' != typeof e[ inputName ] && 'boolean' != typeof e[ inputName ] ) ){
+								if( $.inArray( $( this ).attr( 'type' ), textTypes ) > -1 || $( this ).is( 'select' ) ){
 									e[ inputName ] = $( this ).val();
-								}else if( $( this ).attr( 'type' ) == 'checkbox' || $( this ).attr( 'type' ) == 'radio' ){
+								}else if( $.inArray( $( this ).attr( 'type' ), checkTypes ) > -1 ){
 									if( $( this ).prop( 'checked' ) ){
 										e[ inputName ] = true;
 									}else{
@@ -100,13 +138,13 @@ var wvRender = function( arg ){
 							/*
 							 * Verify type of input to see the correct action
 							 */
-							if( $( this ).attr( 'type' ) == 'text' || $( this ).is( 'select' ) ){
+							if( $.inArray( $( this ).attr( 'type' ), textTypes ) > -1 || $( this ).is( 'select' ) ){
 								$( this ).val( e[ inputName ] );
 							
 								internFunction = function(){
 									e[ inputName ] = $( this ).val();
 								}
-							}else if( $( this ).attr( 'type' ) == 'checkbox' || $( this ).attr( 'type' ) == 'radio' ){
+							}else if( $.inArray( $( this ).attr( 'type' ), checkTypes ) > -1 ){
 								if( e[ inputName ] === 'false' || e[ inputName ] === '0' || e[ inputName ] === false || e[ inputName ] === 0 ){
 									$( this ).attr( 'checked', false ).prop( 'checked', false );
 								}else{
@@ -136,8 +174,28 @@ var wvRender = function( arg ){
 						}
 
 						var bind = function( inputName, callback ){
-							internBind( self2.ob.find( 'input[name="' + inputName + '"], select[name="' + inputName + '"]' ), 'wvBindAll', callback );
+							internBind( self2.ob.find( 'input[name="' + inputName + '"], select[name="' + inputName + '"]' ), 'wvBind', callback );
 						}
+					}
+
+					/**
+					 * Remove item from the render
+					 * @author Wellington Viveiro <wellington@asmex.digital>
+					 * @return {null} 
+					 */
+					var remove = function(){
+						e.removed = true;
+						self.executeRender();
+					}
+
+					/**
+					 * Add empty item to the render
+					 * @author Wellington Viveiro <wellington@asmex.digital>
+					 * @return {null} 
+					 */
+					var add = function( jsObj2 ){
+						jsObj2.push( {} );
+						self.executeRender();
 					}
 
 
@@ -152,7 +210,9 @@ var wvRender = function( arg ){
 						reRender 		: self.executeRender,
 						reRenderUnique 	: self2.renderInternal,
 						bindAll 		: bindAll,
-						bind 			: bind
+						bind 			: bind,
+						remove 			: remove,
+						add 			: add
 					};
 
 
@@ -196,9 +256,233 @@ var wvRender = function( arg ){
 		jqObj.unbind( trigger + bindName ).bind( trigger + bindName, callback );
 	}
 
+	/**
+	 * bind click in button
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {jquery}   jqObj    jquery dom object
+	 * @param  {Function} callback function to be called when click. If undefined, it triggers the click
+	 * @return {null}            
+	 */
+	var click = function( jqObj, callback ){
+		if( ! callback ){
+			jqObj.trigger( 'click.wvClick' );
+			return false;
+		}
+
+		jqObj.unbind( 'click.wvClick' ).bind( 'click.wvClick', function( ev ){
+			callback( ev );
+			ev.preventDefault();
+		} );
+	}
+
+	/**
+	 * Change status of loading
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {Boolean} isWorking
+	 */
+	var setLoad = function( isWorking ){
+		loading = isWorking;
+	}
+
+	/**
+	 * Set content of the loading it user wants
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {jquery} content jquery DOM object or string.
+	 */
+	var setContentLoading = function( content ){
+		contentLoading = content;
+	}
+
+	/**
+	 * Open loading container
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @return {null} 
+	 */
+	var openLoading = function(){
+		closeLoading();
+		if( loading ){
+			$( '<div>', { 'wv-loading' : 'true' } ).html( contentLoading ).appendTo( 'body' );
+		}
+	}
+
+	/**
+	 * Remove loading container
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @return {null}
+	 */
+	var closeLoading = function(){
+		$( 'div[wv-loading]' ).remove();
+	}
+
+	var valid = function( formName ){
+		if( $( 'form[wv-form="' + formName + '"]' ).size() == 0 ) return false;
+		var result = true;
+	    $( 'form[wv-form="' + formName + '"]' ).find( 'input, textarea, select' ).each( function( i ){
+	        if( ! $( this ).valid() ) result = false;
+	    } );
+	    return result;
+	}
+
+	var getIdStorage = function( cont ){
+		cont = cont || 1;
+		var found = false;
+		ls = getStorage();
+
+		ls.forEach( function( e, i, a ){
+			if( ! found ){
+				if( e.id == cont ){
+					found = true;
+				}
+			}
+		} );
+
+		if( found ) return getIdStorage( cont + 1 );
+
+		return cont;
+	}
+
+	var saveStorage = function( json ){
+		if( ! storage ){
+			if( 'undefined' == typeof Storage ) return false;
+			
+
+			if( localStorage.getItem( 'wvrender' ) == null ){
+				localStorage.setItem( 'wvrender', '[]' );
+			}
+
+
+			ls = getStorage();
+
+			contentStorage = {
+				id : getIdStorage(),
+				name : json.storage.name,
+				content : json.data
+			};
+
+			if( json.nameStorage ){
+				contentStorage.nameStorage = json.nameStorage;
+			}
+
+			ls.push( contentStorage );
+
+			setStorage( ls );
+
+			storage = true;
+		}else{
+			ls = getStorage();
+			var found = false;
+			ls.forEach( function( e, i, a ){
+				if( e.id == contentStorage.id ){
+					e.content = json.data;
+					found = true;
+				}
+			} );
+			if( found ){
+				setStorage( ls );
+			}else{
+				storage = false;
+				saveStorage( json );
+			}
+		}
+	}
+
+	var deleteStorage = function( id ){
+		ls = getStorage();
+		ls.forEach( function( e, i, a ){
+			if( e.id == id ){
+				ls.splice( i, 1 );
+				storage = false;
+				contentStorage = {};
+			}
+		} );
+		setStorage( ls );
+	}
+
+	var selectStorage = function( id ){
+		ls = getStorage();
+		ls.forEach( function( e, i, a ){
+			if( e.id == id ){
+				storage = true;
+				contentStorage = e;
+			}
+		} );
+		return contentStorage;
+	}
+
+
+	/**
+	 * Save function
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {json} internArgs arguments to send to ajax function
+	 * @return {null}            
+	 */
+	var save = function( internArgs ){
+		openLoading();
+
+		if( internArgs.storage ){
+			saveStorage( internArgs );
+
+			delete internArgs.storage
+		}
+
+		var defaultArgs = {
+	        url : '/',
+	        dataType : 'json',
+	        method : 'post',
+	        data : {}
+	    } 
+
+	    $.extend( defaultArgs, internArgs );
+
+	    defaultArgs.success = function( result ){
+	    	closeLoading();
+	    	if( result.success ){
+	    		if( contentStorage.id ){
+    				deleteStorage( contentStorage.id );
+    			}
+
+	    		if( internArgs.success ){
+	    			internArgs.success( result );
+	    		}
+	    	}else{
+	    		if( internArgs.fail ){
+	    			internArgs.fail( result );
+	    		}
+	    	}
+	    }
+
+	    defaultArgs.error = function( a, b, c ){
+	    	closeLoading();
+	    	console.log( 'An error has happened' );
+	        console.log( a, b, c );
+	        if( internArgs.error ){
+    			internArgs.error( a, b, c );
+    		}
+	    }
+
+	    $.ajax( defaultArgs );
+	}
+
+	var getStorage = function(){
+		var ls = JSON.parse( localStorage.getItem( 'wvrender' ) );
+		return ls;
+	}
+
+	var setStorage = function( ls ){
+		localStorage.setItem( 'wvrender', JSON.stringify( ls ) );
+	}
+
+
 
 	var result = {
-		render :  render
+		render :  render,
+		click : click,
+		setLoad : setLoad,
+		valid : valid,
+		save : save,
+		getStorage : getStorage,
+		deleteStorage : deleteStorage,
+		selectStorage : selectStorage
 	}
 
 	
