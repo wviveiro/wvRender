@@ -148,6 +148,53 @@ wvRender( function( wv ){
 } );
 ```
 
+### save
+Call an ajax function to save the object. Arguments are the same as in $.ajax function. the default args are:
+
+{
+    url : '/',
+    dataType : 'json',
+    method : 'post',
+    data : {}
+} 
+
+Success function is only called with a json object is received with a variable success == true.
+
+```
+wvRender( function( wv ){
+	wv.save( args );
+} );
+```
+
+### click
+Same as .bind( 'click' ). However it unbind first and create a custom bind not to mess with other clicks.
+
+```
+wvRender( function( wv ){
+	wv.click( $( '.obj' ), function(){} );
+} );
+```
+
+### removeChildren
+remove all children created by the render.
+
+```
+wvRender( function( wv ){
+	wv.render( jsObj, $( 'div[wv-name="test"]' ), function( controller ){
+		wv.click( controller.jq.find( '.remove' ), function(){
+			controller.removeChildren();
+		} );
+	}  );
+} );
+```
+
+## Update 0.0.3
+
+Add function to save data.
+
+Add function to click
+
+Add function to remove children
 
 ## Update 0.0.2
 

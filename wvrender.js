@@ -70,9 +70,12 @@ var wvRender = function( arg ){
 			/*
 			 * Case re render, it deletes the objects already created.
 			 */
-			if( self.children.length > 0 ){
-				self.children.forEach( function( e, i, a ){ e.remove(); } );
+			self.removeChildren = function(){
+				if( self.children.length > 0 ){
+					self.children.forEach( function( e, i, a ){ e.remove(); } );
+				}
 			}
+			self.removeChildren();
 
 			var name = container.attr( 'wv-name' );
 			jsObj.forEach( function( e, i, a ){
@@ -209,6 +212,7 @@ var wvRender = function( arg ){
 						index 			: i,
 						reRender 		: self.executeRender,
 						reRenderUnique 	: self2.renderInternal,
+						removeChildren 	: self.removeChildren,
 						bindAll 		: bindAll,
 						bind 			: bind,
 						remove 			: remove,
