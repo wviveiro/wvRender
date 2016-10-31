@@ -188,6 +188,19 @@ wvRender( function( wv ){
 } );
 ```
 
+### redirect
+Same as window.location.href, the difference is that it opens the loading if set up.
+
+```
+wvRender( function( wv ){
+	wv.redirect( 'http://google.com' );
+} );
+```
+
+## Update 0.0.4
+
+Add redirect function
+
 ## Update 0.0.3
 
 Add function to save data.

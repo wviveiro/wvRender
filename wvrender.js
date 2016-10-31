@@ -310,6 +310,17 @@ var wvRender = function( arg ){
 	}
 
 	/**
+	 * Redirect user (only difference is that is opens the loading)
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {string} url url to be redirected
+	 * @return {null}  
+	 */
+	var redirect = function( url ){
+		openLoading();
+		window.location.href = url;
+	}
+
+	/**
 	 * Remove loading container
 	 * @author Wellington Viveiro <wellington@asmex.digital>
 	 * @return {null}
@@ -481,6 +492,7 @@ var wvRender = function( arg ){
 	var result = {
 		render :  render,
 		click : click,
+		redirect : redirect,
 		setLoad : setLoad,
 		valid : valid,
 		save : save,
