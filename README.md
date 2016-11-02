@@ -197,6 +197,20 @@ wvRender( function( wv ){
 } );
 ```
 
+
+### form
+simulate form to send POST or GET data to another page. So, there is no reason to create inputs. ( From: http://stackoverflow.com/a/8284150/4936992 )
+
+```
+wvRender( function( wv ){
+	wv.form( '/page', { title : 'Hellow World' } );
+} );
+```
+
+## Update 0.0.5
+
+Add form function
+
 ## Update 0.0.4
 
 Add redirect function

@@ -478,14 +478,73 @@ var wvRender = function( arg ){
 	    $.ajax( defaultArgs );
 	}
 
+	/**
+	 * get storager saved in wvrender
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @return {json} storage
+	 */
 	var getStorage = function(){
 		var ls = JSON.parse( localStorage.getItem( 'wvrender' ) );
 		return ls;
 	}
 
+	/**
+	 * set wvrender storage
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {json} ls data to be saved
+	 */
 	var setStorage = function( ls ){
 		localStorage.setItem( 'wvrender', JSON.stringify( ls ) );
 	}
+
+	/**
+	 * Submit a form (like ajax but not ajax)
+	 * @author Wellington Viveiro <wellington@asmex.digital>
+	 * @param  {string} url    form url
+	 * @param  {json} data   data to be sent
+	 * @param  {string} method get or post
+	 * @return {jquery DOM}        form
+	 */
+	var form = function(url, data, method) {
+        if (method == null) method = 'POST';
+        if (data == null) data = {};
+
+        var auxForm = $('<form>').attr({
+            method: method,
+            action: url
+         }).css({
+            display: 'none'
+         });
+
+        var addData = function(name, data) {
+            if ($.isArray(data)) {
+                for (var i = 0; i < data.length; i++) {
+                    var value = data[i];
+                    addData(name + '[]', value);
+                }
+            } else if (typeof data === 'object') {
+                for (var key in data) {
+                    if (data.hasOwnProperty(key)) {
+                        addData(name + '[' + key + ']', data[key]);
+                    }
+                }
+            } else if (data != null) {
+                auxForm.append($('<input>').attr({
+                  type: 'hidden',
+                  name: String(name),
+                  value: String(data)
+                }));
+            }
+        };
+
+        for (var key in data) {
+            if (data.hasOwnProperty(key)) {
+                addData(key, data[key]);
+            }
+        }
+
+        return auxForm;
+    }
 
 
 
@@ -498,7 +557,8 @@ var wvRender = function( arg ){
 		save : save,
 		getStorage : getStorage,
 		deleteStorage : deleteStorage,
-		selectStorage : selectStorage
+		selectStorage : selectStorage,
+		form : form
 	}
 
 	
