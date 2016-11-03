@@ -517,10 +517,10 @@ var wvRender = function( arg ){
          });
 
         var addData = function(name, data) {
-            if ($.isArray(data)) {
+            if ( $.isArray(data) ) {
                 for (var i = 0; i < data.length; i++) {
                     var value = data[i];
-                    addData(name + '[]', value);
+                    addData(name + '[' + i + ']', value);
                 }
             } else if (typeof data === 'object') {
                 for (var key in data) {

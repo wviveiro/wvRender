@@ -207,6 +207,10 @@ wvRender( function( wv ){
 } );
 ```
 
+## Update 0.0.6
+
+Fix issue with form
+
 ## Update 0.0.5
 
 Add form function
