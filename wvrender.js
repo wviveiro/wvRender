@@ -126,7 +126,8 @@ var wvRender = function( arg ){
 							/*
 							 * In order to avoid error, force property to be string
 							 */
-							if( ! e.hasOwnProperty( inputName ) || ( 'string' != typeof e[ inputName ] && 'boolean' != typeof e[ inputName ] ) ){
+							var arrTypeofValid = [ 'boolean', 'number', 'string' ];
+							if( ! e.hasOwnProperty( inputName ) || ( ! $.inArray( typeof inputName, arrTypeofValid ) ) ){
 								if( $.inArray( $( this ).attr( 'type' ), textTypes ) > -1 || $( this ).is( 'select' ) ){
 									e[ inputName ] = $( this ).val();
 								}else if( $.inArray( $( this ).attr( 'type' ), checkTypes ) > -1 ){
