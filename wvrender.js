@@ -78,6 +78,11 @@ var wvRender = function( arg ){
 			self.removeChildren();
 
 			var name = container.attr( 'wv-name' );
+
+			if( 'undeifned' != typeof container.attr( 'wv-name' ) ){
+				$( '[wv-child="' + container.attr( 'wv-name' ) + '"]' ).remove();
+			}
+
 			jsObj.forEach( function( e, i, a ){
 				
 				/**
@@ -103,9 +108,8 @@ var wvRender = function( arg ){
 
 					
 					self2.ob = container.clone().removeAttr( 'wv-name' );
-					
+
 					if( 'undeifned' != typeof container.attr( 'wv-name' ) ){
-						$( '[wv-child="' + container.attr( 'wv-name' ) + '"]' ).remove();
 						self2.ob.attr( 'wv-child', container.attr( 'wv-name' ) );
 					}
 
