@@ -94,13 +94,21 @@ var wvRender = function( arg ){
 						self2.ob.remove();
 					}
 
+
+
 					/*
 					 * If item is removed, do not render
 					 */
 					if( e.removed ) return false;
 
 					
-					self2.ob = container.clone().removeAttr( 'wv-name' );			
+					self2.ob = container.clone().removeAttr( 'wv-name' );
+					
+					if( 'undeifned' != typeof container.attr( 'wv-name' ) ){
+						$( '[wv-child="' + container.attr( 'wv-name' ) + '"]' ).remove();
+						self2.ob.attr( 'wv-child', container.attr( 'wv-name' ) );
+					}
+
 					self.children.push( self2.ob );
 
 					if( 'undefined' != typeof name ){

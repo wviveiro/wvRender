@@ -207,6 +207,10 @@ wvRender( function( wv ){
 } );
 ```
 
+## Update 0.0.7
+
+Add function to remove child automatically even without using reRender
+
 ## Update 0.0.6
 
 Fix issue with form
