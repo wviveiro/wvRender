@@ -44,7 +44,7 @@ var wvRender = function( arg ){
 	 * @param  {json}   jsObj     object that will be rendered
 	 * @param  {jquery}   container jquery DOM that will be duplicated
 	 * @param  {Function} callback  function that will be called in each object created
-	 * @return {null}             
+	 * @return controller        
 	 */
 	var render = function( jsObj, container, callback ){
 		var self = {};
@@ -79,9 +79,8 @@ var wvRender = function( arg ){
 
 			var name = container.attr( 'wv-name' );
 
-			if( 'undeifned' != typeof container.attr( 'wv-name' ) ){
-				$( '[wv-child="' + container.attr( 'wv-name' ) + '"]' ).remove();
-			}
+			
+			controller = null;
 
 			jsObj.forEach( function( e, i, a ){
 				
@@ -108,10 +107,6 @@ var wvRender = function( arg ){
 
 					
 					self2.ob = container.clone().removeAttr( 'wv-name' );
-
-					if( 'undeifned' != typeof container.attr( 'wv-name' ) ){
-						self2.ob.attr( 'wv-child', container.attr( 'wv-name' ) );
-					}
 
 					self.children.push( self2.ob );
 
@@ -219,7 +214,7 @@ var wvRender = function( arg ){
 					/*
 					 * object that will be sent in the callback
 					 */
-					var controller = {
+					controller = {
 						json 			: e, 
 						jq 				: self2.ob,
 						index 			: i,
@@ -241,9 +236,11 @@ var wvRender = function( arg ){
 				self2.renderInternal();
 
 			} );
+
+			return controller;
 		}
 
-		self.executeRender();
+		return self.executeRender();
 		
 	}
 

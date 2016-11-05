@@ -207,6 +207,10 @@ wvRender( function( wv ){
 } );
 ```
 
+## Update 0.0.9
+
+Fix problem with new feature to delete child
+
 ## Update 0.0.8
 
 Fix problem with new feature to delete child
