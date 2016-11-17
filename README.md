@@ -14,6 +14,10 @@ This plugin was created to create forms straight from a JSON object. With this p
 
 This plugin only works with jQuery. 
 
+## Version 0.1.0
+
+Now you don't need wv-parent anymore, you can just use wv-input! Check at the end of the documentation how to use it.
+
 ## How to use
 
 First of all, you have to have a json object you want to render. The object has to be an array, as below:
@@ -206,6 +210,43 @@ wvRender( function( wv ){
 	wv.form( '/page', { title : 'Hellow World' } );
 } );
 ```
+
+### wv-input
+It is similar to wv-parent, however, you don't need to add name anymore and it accepts multi level
+
+```
+<div wv-name="user">
+	<p><label>Name: <input type="text" wv-input="user.name"></label></p>
+	<p><label>Surname: <input type="text" wv-input="user.surname"></label></p>
+	<p><label>Email: <input type="text" wv-input="user.email"></label></p>
+	<p><label>Age: <input type="text" wv-input="user.age"></label></p>
+	<p><label>Is tall? <input type="checkbox" wv-input="user.is_tall"></label></p>
+	<p><label>Male <input type="radio" wv-input="user.sex" value="male"></label> <label>Female <input type="radio" wv-input="user.sex" value="female"></label></p>
+</div>
+```
+
+### set
+binds back the value to the DOM object
+
+```
+wvRender( function( wv ){
+	wv.render( [ user ], $( '[wv-name="user"]' ), function(){
+		c.set( 'sex', 'male' );
+	} );
+} );
+```
+
+
+
+## Update 0.1.0
+
+
+Attribute wv-input with multi levels
+Attribute wv-inner with multi levels to render HTML
+Function set to bind back to DOM
+
+
+multi level objects
 
 ## Update 0.0.9
 

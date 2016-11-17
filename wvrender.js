@@ -60,7 +60,8 @@ var wvRender = function( arg ){
 		input types
 		 */
 		var textTypes = [ 'text', 'number', 'password' ];
-		var checkTypes = [ 'checkbox', 'radio' ];
+		var checkTypes = [ 'checkbox' ];
+		var radioTypes = [ 'radio' ];
 
 		/*
 		 * Function calls another function inside, to be able to re render when necessary
@@ -78,6 +79,7 @@ var wvRender = function( arg ){
 			self.removeChildren();
 
 			var name = container.attr( 'wv-name' );
+			var counter = 0; //used to count how many objects are valid (IT IS NOT INDEX)
 
 			
 			controller = null;
@@ -88,6 +90,40 @@ var wvRender = function( arg ){
 				 * Self2 is used case user wants to render unique
 				 */
 				var self2 = {};
+
+				self2.setter = {};
+
+				/**
+				 * get the object property from levels
+				 * @author Wellington Viveiro <wellington@asmex.digital>
+				 * @param  {string} property levels
+				 * @param  {string} value case wants to give a value for the object
+				 * @return {Object}          
+				 */	
+				var getObjLevel = function( property, value ){
+					var obj = e;
+
+					property = property.replace( name + '.', '' ).split( '.' );
+					property.forEach( function( prop, i_prop ){
+						if( obj.hasOwnProperty( prop ) ){
+							if( i_prop == property.length - 1 ){
+								if( typeof value != 'undefined' ) obj[ prop ] = value;
+								obj = obj[ prop ];
+							}else{
+								obj = obj[ prop ];
+							}
+						}else{
+							if( i_prop == property.length - 1 ){
+								obj[ prop ] = value || false;
+								obj = obj[ prop ];
+							}else{
+								obj[ prop ] = {};
+								obj = obj[ prop ];
+							}
+						}
+					} );
+					return obj;
+				}
 
 				/*
 				 * ob is the container that will be cloned and addes to the html
@@ -103,7 +139,9 @@ var wvRender = function( arg ){
 					/*
 					 * If item is removed, do not render
 					 */
-					if( e.removed ) return false;
+					if( e.removed && e.removed !== 'false' ) return false;
+
+					counter++;
 
 					
 					self2.ob = container.clone().removeAttr( 'wv-name' );
@@ -112,14 +150,93 @@ var wvRender = function( arg ){
 
 					if( 'undefined' != typeof name ){
 						var input = {
-							general : 'input[wv-parent="' + name + '"],select[wv-parent="' + name + '"]',
+							general : 'input[wv-parent="' + name + '"],select[wv-parent="' + name + '."]',
 						}
 
-						self2.ob.find( '*[wv-inner]' ).each( function( i2 ){
-							var innerName = $( this ).attr( 'wv-inner' );
-							if( e.hasOwnProperty( innerName ) ){
-								$( this ).html( e[ innerName ] );
+						self2.ob.find( '[wv-inner^="' + name + '."]' ).each( function( i2 ){
+							var inputObj = $( this );
+							var inputName = inputObj.attr( 'wv-inner' );
+
+							var wvInnerFunc = function(){
+								var obj = getObjLevel( inputName );
+								if( obj !== false ){
+									inputObj.html( obj );
+								}
 							}
+							wvInnerFunc();
+
+							self2.setter[ inputName ] = self2.setter[ inputName ] || [];
+							self2.setter[ inputName ].push( wvInnerFunc );
+
+						} );
+
+						self2.ob.find( '[wv-input^="' + name + '."]' ).each( function( i2 ){
+							var inputObj = $( this );
+							var inputName = inputObj.attr( 'wv-input' );
+
+							if( $.inArray( inputObj.attr( 'type' ), textTypes ) > -1 || inputObj.is( 'select' ) ){
+								
+								//Function to add JSON value into DOM value
+								var externalFunction = function(){
+									var obj = getObjLevel( inputName );
+									if( obj !== false ){
+										inputObj.val( obj );
+									}
+								}
+
+								//Function to add DOM value int JSON value
+								var internFunction = function(){
+									getObjLevel( inputName, inputObj.val() );
+								}
+							}else if( $.inArray( inputObj.attr( 'type' ), checkTypes ) > -1 ){
+								//Function to add JSON value into DOM value
+								var externalFunction = function(){
+									var obj = getObjLevel( inputName );
+									if( obj === 'false' || obj === '0' || obj === false || obj === 0 ){
+										inputObj.prop( 'checked', false ).attr( 'checked', false );
+									}else{
+										inputObj.prop( 'checked', true ).attr( 'checked', true );
+									}
+								}
+
+								//Function to add DOM value int JSON value
+								var internFunction = function(){
+									getObjLevel( inputName, inputObj.prop( 'checked' ) );
+								}
+							}else if( $.inArray( inputObj.attr( 'type' ), radioTypes ) > -1 ){
+								
+								var externalFunction = function(){
+									var obj = getObjLevel( inputName );
+									self2.ob.find( 'input[type="radio"][wv-input="' + inputName + '"]' )
+												.prop( 'checked', false ).attr( 'checked', false );
+									self2.ob.find( 'input[type="radio"][wv-input="' + inputName + '"][value="' + obj + '"]' )
+												.prop( 'checked', true ).attr( 'checked', true );
+
+								}
+
+								var internFunction = function(){
+									var obj = getObjLevel( inputName );
+									getObjLevel( inputName, inputObj.val() );
+									self2.ob.find( 'input[type="radio"][wv-input="' + inputName + '"]' )
+									.prop( 'checked', false ).attr( 'checked', false );
+									inputObj.prop( 'checked', true ).attr( 'checked', true );
+								}
+							}else{
+								var externalFunction = function(){};
+								var internFunction = function(){};
+							}
+
+							externalFunction();
+							self2.setter[ inputName ] = self2.setter[ inputName ] || [];
+							self2.setter[ inputName ].push( externalFunction );
+							internBind( inputObj, 'wvinternbind', internFunction );
+						} );
+
+						/**
+						 * Special treatment for radio buttons which need to receive an extra attribute to work
+						 */
+						self2.ob.find( 'input[type="radio"][wv-parent="' + name + '"]' ).each( function(){
+							$( this ).attr( 'wv-radio-name', $( this ).attr( 'name' ) ).removeAttr( 'name' );
 						} );
 
 						/*
@@ -127,21 +244,33 @@ var wvRender = function( arg ){
 						 * add the input name as property of the json object
 						 */
 						self2.ob.find( input.general ).each( function( i2 ){
-							var inputName = $( this ).attr( 'name' );
-							if( 'undefined' == typeof inputName ) return false;
+							var inputObj = $( this );
+							var inputName = inputObj.attr( 'name' );
+							if( 'undefined' == typeof inputName ){
+								inputName = inputObj.attr( 'wv-radio-name' ); //Verify if there is a radio name
+								if( 'undefined' == typeof inputName ) return false;
+							}
 
 							/*
 							 * In order to avoid error, force property to be string
 							 */
 							var arrTypeofValid = [ 'boolean', 'number', 'string' ];
 							if( ! e.hasOwnProperty( inputName ) || ( ! $.inArray( typeof inputName, arrTypeofValid ) ) ){
-								if( $.inArray( $( this ).attr( 'type' ), textTypes ) > -1 || $( this ).is( 'select' ) ){
-									e[ inputName ] = $( this ).val();
-								}else if( $.inArray( $( this ).attr( 'type' ), checkTypes ) > -1 ){
-									if( $( this ).prop( 'checked' ) ){
+								if( $.inArray( inputObj.attr( 'type' ), textTypes ) > -1 || inputObj.is( 'select' ) ){
+									e[ inputName ] = inputObj.val();
+								}else if( $.inArray( inputObj.attr( 'type' ), checkTypes ) > -1 ){
+									if( inputObj.prop( 'checked' ) ){
 										e[ inputName ] = true;
 									}else{
 										e[ inputName ] = false;
+									}
+								}else if( $.inArray( inputObj.attr( 'type' ), radioTypes ) > -1 ){
+									e[ inputName ] = '';
+									if( inputObj.prop( 'checked' ) ){
+										e[ inputName ] = inputObj.val();
+										self2.ob.find( 'input[type="radio"][wv-radio-name="' + inputName + '"]' )
+											.prop( 'checked', false ).attr( 'checked', false );
+										inputObj.prop( 'checked', true ).attr( 'checked', true );
 									}
 								}
 							}
@@ -149,28 +278,63 @@ var wvRender = function( arg ){
 							/*
 							 * Verify type of input to see the correct action
 							 */
-							if( $.inArray( $( this ).attr( 'type' ), textTypes ) > -1 || $( this ).is( 'select' ) ){
-								$( this ).val( e[ inputName ] );
-							
-								internFunction = function(){
-									e[ inputName ] = $( this ).val();
-								}
-							}else if( $.inArray( $( this ).attr( 'type' ), checkTypes ) > -1 ){
-								if( e[ inputName ] === 'false' || e[ inputName ] === '0' || e[ inputName ] === false || e[ inputName ] === 0 ){
-									$( this ).attr( 'checked', false ).prop( 'checked', false );
-								}else{
-									$( this ).attr( 'checked', true ).prop( 'checked', true );
+							if( $.inArray( inputObj.attr( 'type' ), textTypes ) > -1 || inputObj.is( 'select' ) ){
+								
+								externalFunction = function(){
+									inputObj.val( e[ inputName ] );
 								}
 
+								externalFunction();
+
 								internFunction = function(){
-									e[ inputName ] = $( this ).prop( 'checked' );
+									e[ inputName ] = inputObj.val();
+								}
+							}else if( $.inArray( inputObj.attr( 'type' ), checkTypes ) > -1 ){
+								externalFunction = function(){
+									if( e[ inputName ] === 'false' || e[ inputName ] === '0' || e[ inputName ] === false || e[ inputName ] === 0 ){
+										inputObj.attr( 'checked', false ).prop( 'checked', false );
+									}else{
+										inputObj.attr( 'checked', true ).prop( 'checked', true );
+									}
+								}
+
+								externalFunction();
+
+								internFunction = function(){
+									e[ inputName ] = inputObj.prop( 'checked' );
+								}
+							}else if( $.inArray( inputObj.attr( 'type' ), radioTypes ) > -1 ){
+								
+								externalFunction = function(){
+									if( e[ inputName ] == inputObj.val() ){
+										self2.ob.find( 'input[type="radio"][wv-radio-name="' + inputName + '"]' )
+												.prop( 'checked', false ).attr( 'checked', false );
+											inputObj.prop( 'checked', true ).attr( 'checked', true );
+									}
+								}
+
+								externalFunction();
+
+								internFunction = function(){
+									e[ inputName ] = inputObj.val();
+									self2.ob.find( 'input[type="radio"][wv-radio-name="' + inputName + '"]' )
+											.prop( 'checked', false ).attr( 'checked', false );
+										inputObj.prop( 'checked', true ).attr( 'checked', true );
 								}
 							}
 
 							/*
 							 * Key the value of the input and the json property the same.
 							 */
-							internBind( $( this ), 'wvinternbind', internFunction );
+							internBind( inputObj, 'wvinternbind', internFunction );
+
+							/*
+							 * Create a setter to call the external function and bind back to the object
+							 */
+							externalFunction = externalFunction || function(){};
+							self2.setter[ inputName ] = self2.setter[ inputName ] || [];
+
+							self2.setter[ inputName ].push( externalFunction );
 							
 						} );
 
@@ -185,7 +349,9 @@ var wvRender = function( arg ){
 						}
 
 						var bind = function( inputName, callback ){
-							internBind( self2.ob.find( 'input[name="' + inputName + '"], select[name="' + inputName + '"]' ), 'wvBind', callback );
+							internBind( self2.ob.find( 'input[name="' + inputName + '"], input[type="radio"][wv-radio-name="' + inputName + '"], select[name="' + inputName + '"]' ), 'wvBind', callback );
+							var inputName2 = `${name}.${inputName}`;
+							internBind( self2.ob.find( '[wv-input="' + inputName2 + '"]' ), 'wvBind', callback );
 						}
 					}
 
@@ -209,6 +375,25 @@ var wvRender = function( arg ){
 						self.executeRender();
 					}
 
+					/**
+					 * Bind back to the DOM object
+					 * @author Wellington Viveiro <wellington@asmex.digital>
+					 * @param  {string} inputName input name
+					 * @param  {string} value     new value (can be number, and boolean as well)
+					 */
+					var set = function( inputName, value ){
+						inputName = `${name}.${inputName}`;
+
+
+						var obj = getObjLevel( inputName, value );
+
+						if( self2.setter.hasOwnProperty( inputName ) ){
+							self2.setter[ inputName ].forEach( function( s ){
+								s();
+							} );
+						}
+					}
+
 
 
 					/*
@@ -218,13 +403,15 @@ var wvRender = function( arg ){
 						json 			: e, 
 						jq 				: self2.ob,
 						index 			: i,
+						counter 		: counter,
 						reRender 		: self.executeRender,
 						reRenderUnique 	: self2.renderInternal,
 						removeChildren 	: self.removeChildren,
 						bindAll 		: bindAll,
 						bind 			: bind,
 						remove 			: remove,
-						add 			: add
+						add 			: add,
+						set 			: set
 					};
 
 
